@@ -224,6 +224,8 @@ footer{text-align:center;margin-top:var(--s6);font-family:var(--serif);
 const G=(n,pax,base,cat)=>({n,u:'g',pax,base:base||0,cat});
 const M=(n,pax,base,cat)=>({n,u:'ml',pax,base:base||0,cat});
 const U=(n,pax,base,cat)=>({n,u:'uds',pax,base:base||0,cat});
+// Paquets de pes conegut: es compren per unitats, pero convé veure quant pesa tot junt.
+const B=(n,pax,base,cat,pes,pu)=>({n,u:'uds',pax,base:base||0,cat,pes,pu:pu||'g'});
 
 const CARN='Carnisseria', PEIX='Peixateria', VERD='Verduleria',
       LACT='Lactis i ous', SEC='Rebost', PA='Forn', CONG='Congelats';
@@ -245,8 +247,8 @@ const MENUS=[
    G('Arròs bomba',100,0,SEC),
    G('Pollastre a trossos',150,0,CARN),
    G('Conill a trossos',110,0,CARN),
-   G('Bajoqueta',60,0,VERD),
-   G('Garrofó',40,0,VERD),
+   G('Bajoqueta congelada (Mercadona)',60,0,CONG),
+   G('Garrofó congelat (Mercadona)',40,0,CONG),
    G('Tomaca ratllada',50,0,VERD),
    M('Oli d’oliva',12,250,SEC),
    G('Pebre roig',1,25,SEC),
@@ -265,6 +267,22 @@ const MENUS=[
    M('Oli d’oliva',5,200,SEC),
    G('Sal',0,40,SEC),
    G('Pebre negre',0,15,SEC),
+ ]},
+
+ {id:'fideua', dia:3, mom:'Dinar', plat:'Fideuà de peix', pax:30, ing:[
+   G('Fideus de fideuà (nº 2)',100,0,SEC),
+   B('Preparat de fideuà congelat (bosses de 400 g)',0.25,0,CONG,400),
+   B('Llagostins congelats (bosses de 400 g)',0.15,0,CONG,400),
+   B('Lluç a daus congelat (bosses de 400 g)',0.15,0,CONG,400),
+   B('Fumet de peix (brics d’1 L)',0.25,0,SEC,1000,'ml'),
+   G('Tomaca ratllada',50,0,VERD),
+   G('All',3,0,VERD),
+   M('Oli d’oliva',12,250,SEC),
+   G('Pebre roig',1,25,SEC),
+   G('Safrà',0,3,SEC),
+   G('Sal',8,0,SEC),
+   G('Allioli',20,0,SEC),
+   G('Llimes',15,0,VERD),
  ]},
 
  {id:'cassola', dia:3, mom:'Sopar', plat:'Cassolà', pax:30, ing:[],
@@ -346,6 +364,14 @@ function compra(q,u){
   return Math.ceil(q)+' '+u;
 }
 
+// El que pesen les bosses que t'endus: 8 bosses de 400 g son 3,2 kg. Aci no s'arrodonix
+// a l'alça com en compra(), que este numero ja es exacte.
+const pesa=(q,u)=> q>=1000
+  ? String(+(q/1000).toFixed(2)).replace('.',',') + (u==='ml'?' L':' kg')
+  : Math.round(q) + ' ' + u;
+// La columneta grisa de la dreta: pes real dels paquets, o la xifra crua de la resta.
+const cru=i=> i.pes ? pesa(Math.ceil(i.q)*i.pes, i.pu) : Math.round(i.q)+' '+i.u;
+
 
 
 /* ---------- dates ---------- */
@@ -375,7 +401,7 @@ function agrega(menus){
     const pax=estat(m).pax;
     for(const i of m.ing){
       const k=i.n+'|'+i.u;
-      acc[k]=acc[k]||{n:i.n,u:i.u,cat:i.cat,q:0};
+      acc[k]=acc[k]||{n:i.n,u:i.u,cat:i.cat,pes:i.pes,pu:i.pu,q:0};
       acc[k].q += i.base + i.pax*pax;
     }
   }
@@ -419,7 +445,7 @@ function pintaLlista(items,ns){
         <span class="n">${i.n}</span>
         <i class="lead" aria-hidden="true"></i>
         <span class="q">${compra(i.q,i.u)}</span>
-        <span class="raw">${Math.round(i.q)} ${i.u}</span>
+        <span class="raw">${cru(i)}</span>
       </li>`;
     }).join('')+'</ul>';
   }).join('');
@@ -567,7 +593,7 @@ function copiar(ns){
   const txt = titol+'\nPenya l’Arjup\n\n'
     + ORDRE.filter(c=>items.some(i=>i.cat===c)).map(c=>
         c.toUpperCase()+'\n'+items.filter(i=>i.cat===c)
-          .map(i=>'- '+i.n+': '+compra(i.q,i.u)).join('\n')
+          .map(i=>'- '+i.n+': '+compra(i.q,i.u)+(i.pes?' ('+cru(i)+')':'')).join('\n')
       ).join('\n\n')
     + (extres(ns).length ? '\n\nAFEGITS A MÀ\n'
         + extres(ns).map(x=>'- '+x.n+(x.q?': '+x.q:'')).join('\n') : '');
