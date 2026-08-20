@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FBF9F4">
+<title>ArjupCooks</title>
+<link rel="icon" href="pato_chef.png">
+<link rel="apple-touch-icon" href="pato_chef.png">
+<style>
+/* ============================================================
+   ArjupCooks — sistema visual "carta de restaurant"
+   Paper i tinta, filets fins, serif de display, roig comptat.
+   ============================================================ */
+:root{
+  /* color */
+  --paper:#FBF9F4; --wash:#F3EFE5; --ink:#17140F; --soft:#6E6558;
+  --rule:#DFD8C9; --hair:#EAE4D7; --red:#A4161A; --red-soft:#C6373B;
+  /* tipografia */
+  --serif:ui-serif,"New York","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  /* espai (base 8) */
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s6:48px;
+  /* moviment */
+  --fast:180ms; --base:260ms; --ease:cubic-bezier(.2,.7,.3,1);
+}
+@media (prefers-color-scheme:dark){
+:root{
+  --paper:#151210; --wash:#1D1917; --ink:#F3EEE4; --soft:#948A7C;
+  --rule:#2E2A23; --hair:#241F1A; --red:#D9483F; --red-soft:#E9695F;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0 auto;max-width:660px;color:var(--ink);
+  background:var(--paper);
+  font:16px/1.5 var(--sans);
+  padding:var(--s3) 22px calc(var(--s6) + env(safe-area-inset-bottom));
+  letter-spacing:.005em;
+}
+/* gra de paper, molt subtil */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+body>*{position:relative;z-index:1}
+a{color:inherit;text-decoration:none}
+
+/* etiquetes en versaleta */
+.lbl{font-family:var(--sans);font-size:.63rem;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--soft)}
+.lbl.red{color:var(--red)}
+
+/* ---------- capçalera: masthead de carta ---------- */
+.mast{text-align:center;padding-top:var(--s1)}
+.mast img{width:72px;height:auto;display:block;margin:0 auto var(--s2)}
+.mast .house{font-family:var(--sans);font-size:.62rem;font-weight:700;
+  letter-spacing:.34em;text-transform:uppercase;color:var(--red);margin:0 0 6px}
+.mast h1{font-family:var(--serif);font-size:2.45rem;font-weight:600;
+  letter-spacing:-.02em;line-height:1;margin:0}
+.mast h1 em{font-style:italic;color:var(--red)}
+.rule2{height:4px;border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);
+  margin:var(--s2) 0 0}
+.dateline{display:flex;justify-content:center;align-items:center;gap:9px;
+  flex-wrap:wrap;margin:14px 0 var(--s6);font-family:var(--serif);
+  font-style:italic;font-size:.92rem;color:var(--soft)}
+.dateline input{font-family:var(--sans);font-size:.76rem;font-weight:600;
+  letter-spacing:.03em;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px solid var(--rule);padding:3px 2px;border-radius:0}
+
+/* ---------- seccions de dia ---------- */
+.jorn{margin-bottom:var(--s6)}
+.jhead{margin-bottom:var(--s1)}
+.jhead .n{display:block;margin-bottom:5px}
+.jhead h2{font-family:var(--serif);font-size:1.62rem;font-weight:600;
+  letter-spacing:-.015em;margin:0;line-height:1.1;text-transform:capitalize}
+.jhead time{display:block;font-family:var(--serif);font-style:italic;
+  font-size:.9rem;color:var(--soft);margin-top:1px}
+.jhead::after{content:"";display:block;height:1px;background:var(--ink);
+  margin-top:11px;opacity:.85}
+
+/* ---------- fila de plat ---------- */
+.plat{display:flex;align-items:center;gap:16px;padding:18px 2px;
+  border-bottom:1px solid var(--hair);position:relative;
+  transition:opacity var(--fast) var(--ease)}
+.plat:active{opacity:.55}
+.plat .txt{flex:1;min-width:0}
+.plat .name{font-family:var(--serif);font-size:1.3rem;font-weight:600;
+  letter-spacing:-.015em;line-height:1.22;display:block;margin:5px 0 6px}
+.plat .meta{font-family:var(--sans);font-size:.76rem;color:var(--soft);display:block}
+.plat .meta b{color:var(--ink);font-weight:600}
+.plat .chev{flex:none;font-family:var(--serif);font-size:1.5rem;color:var(--red);
+  line-height:1;opacity:.75}
+.plat .fill{position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--red);
+  transform-origin:left;transition:transform var(--base) var(--ease)}
+.plat.wait .name{font-style:italic;color:var(--soft);font-weight:500}
+.aside{font-family:var(--serif);font-style:italic;font-size:.86rem;color:var(--soft);
+  padding:12px 2px 16px;border-bottom:1px solid var(--hair);margin-top:-1px}
+
+/* ---------- pantalla de menjar ---------- */
+.back{display:inline-block;margin:0 0 var(--s4)}
+.stamp{margin:0 0 10px}
+.tit{font-family:var(--serif);font-size:2.1rem;font-weight:600;letter-spacing:-.028em;
+  line-height:1.08;margin:0 0 var(--s3)}
+/* bloc de comensals: ha de cantar que aci es on es canvia */
+.pax{background:var(--wash);border:1px solid var(--rule);padding:16px 16px 13px;
+  margin:0 0 var(--s2)}
+.pax .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px}
+.pax .head .ask{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--soft)}
+.pax .row{display:flex;align-items:center;justify-content:center;gap:var(--s3)}
+.pax button{flex:none;width:54px;height:54px;padding:0;border:0;border-radius:50%;
+  background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:1.8rem;
+  font-weight:300;line-height:1;cursor:pointer;display:grid;place-items:center;
+  transition:background var(--fast) var(--ease),transform var(--fast) var(--ease)}
+.pax button:hover{background:var(--red)}
+.pax button:active{transform:scale(.92)}
+.pax input{width:124px;flex:none;text-align:center;background:transparent;color:var(--ink);
+  font-family:var(--serif);font-size:2.9rem;font-weight:600;line-height:1;padding:0 0 4px;
+  border:0;border-bottom:2px solid var(--red);border-radius:0;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.pax input::-webkit-outer-spin-button,.pax input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.pax .hint{text-align:center;margin:13px 0 0;font-family:var(--serif);font-style:italic;
+  font-size:.82rem;color:var(--soft)}
+
+/* ---------- llista ---------- */
+.secline{display:flex;align-items:baseline;gap:12px;margin:var(--s4) 0 2px}
+.secline::after{content:"";flex:1;height:1px;background:var(--rule)}
+.count{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--soft);
+  font-variant-numeric:tabular-nums}
+.meter{height:1px;background:var(--rule);margin:var(--s2) 0 0;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--red);transform-origin:left;
+  transition:transform var(--base) var(--ease)}
+ul{list-style:none;padding:0;margin:0}
+li{display:flex;align-items:baseline;gap:12px;padding:13px 2px;
+  border-bottom:1px solid var(--hair);transition:opacity var(--fast) var(--ease)}
+li .n{font-family:var(--serif);font-size:1.02rem}
+li .lead{flex:1;border-bottom:1px dotted var(--rule);transform:translateY(-4px);min-width:18px}
+li .q{font-family:var(--serif);font-size:1.02rem;font-weight:600;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+li .raw{font-family:var(--sans);font-size:.66rem;color:var(--soft);white-space:nowrap;
+  min-width:56px;text-align:right}
+li.done{opacity:.34}
+li.done .n{text-decoration:line-through}
+/* casella dibuixada, no la del sistema */
+li input{appearance:none;-webkit-appearance:none;flex:none;width:19px;height:19px;
+  margin:0;border:1px solid var(--rule);background:transparent;cursor:pointer;
+  position:relative;top:3px;transition:background var(--fast) var(--ease),
+  border-color var(--fast) var(--ease)}
+li input:checked{background:var(--red);border-color:var(--red)}
+li input:checked::after{content:"";position:absolute;left:6px;top:2px;width:4px;height:9px;
+  border:solid var(--paper);border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+li input:focus-visible,a:focus-visible,button:focus-visible{
+  outline:1.5px solid var(--red);outline-offset:3px}
+
+/* ---------- afegits a ma ---------- */
+.add{display:flex;gap:10px;align-items:flex-end;margin:15px 0 0;flex-wrap:wrap}
+.add input{flex:1;min-width:120px;font-family:var(--serif);font-size:1.02rem;
+  color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--rule);
+  padding:9px 2px;border-radius:0}
+.add input::placeholder{color:var(--soft);font-style:italic}
+.add input:focus{outline:0;border-bottom-color:var(--red)}
+.add input.qty{flex:0 0 92px;min-width:0;text-align:right}
+.add button{flex:none;padding:12px 16px}
+li .del{flex:none;border:0;background:transparent;color:var(--soft);cursor:pointer;
+  font-family:var(--serif);font-size:1.3rem;line-height:1;padding:0 0 0 4px;
+  transition:color var(--fast) var(--ease)}
+li .del:hover{color:var(--red)}
+li .q.hand{font-style:italic;font-weight:500;color:var(--soft)}
+
+/* ---------- botons ---------- */
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin:var(--s4) 0 0}
+button.act,.act{font-family:var(--sans);font-size:.66rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink);
+  background:transparent;border:1px solid var(--rule);border-radius:0;
+  padding:14px 18px;cursor:pointer;display:inline-block;
+  transition:background var(--fast) var(--ease),color var(--fast) var(--ease),
+             border-color var(--fast) var(--ease)}
+.act:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.act:active{transform:translateY(1px)}
+.act.solid{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.act.solid:hover{background:var(--red);border-color:var(--red)}
+
+/* ---------- peu de fitxa ---------- */
+.colofon{margin-top:var(--s6);padding-top:var(--s2);border-top:2px solid var(--ink)}
+.colofon div{display:flex;justify-content:space-between;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--hair);font-family:var(--sans);font-size:.78rem;
+  color:var(--soft)}
+.colofon div:last-child{border:0}
+.colofon b{font-family:var(--serif);font-size:1.12rem;font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.colofon .big b{font-size:1.9rem}
+footer{text-align:center;margin-top:var(--s6);font-family:var(--serif);
+  font-style:italic;font-size:.8rem;color:var(--soft)}
+
+/* ---------- moviment ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#app{animation:rise var(--base) var(--ease) both}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
+@media print{
+  body::before,.acts,.back,.step,.meter,.dateline,.pax .row,.pax .hint,.add,li .del,footer{display:none}
+  body{max-width:none;padding:0}
+}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <a href="#/"><img src="pato_chef.png" alt="Pato xef de la Penya l'Arjup"></a>
+  <p class="house">Penya l'Arjup</p>
+  <h1>Arjup<em>Cooks</em></h1>
+  <div class="rule2"></div>
+</div>
+
+<div id="app"></div>
+<footer>Cuinat per la penya, comprat pel pato</footer>
+
+<script>
+// ponytail: qty = base + perPax*pax. base absorbe lo que NO escala (sal, especias,
+// aceite de fondo). Si algo sale corto o sobra: toca los numeros de aqui abajo y ya.
+const G=(n,pax,base,cat)=>({n,u:'g',pax,base:base||0,cat});
+const M=(n,pax,base,cat)=>({n,u:'ml',pax,base:base||0,cat});
+const U=(n,pax,base,cat)=>({n,u:'uds',pax,base:base||0,cat});
+
+const CARN='Carnisseria', PEIX='Peixateria', VERD='Verduleria',
+      LACT='Lactis i ous', SEC='Rebost', PA='Forn', CONG='Congelats';
+
+const MENUS=[
+ {id:'esmorzar', dia:1, mom:'Esmorzar', plat:'Salsitxes amb tomaca', pax:30, ing:[
+   G('Salsitxes fresques',180,0,CARN),
+   G('Tomaca triturada',120,0,SEC),
+   G('Ceba',40,0,VERD),
+   G('All',3,0,VERD),
+   G('Pa',100,0,PA),
+   M('Oli d’oliva',5,300,SEC),
+   G('Sal',0,40,SEC),
+   G('Pebre roig',0,15,SEC),
+   G('Sucre',0,20,SEC),
+ ]},
+
+ {id:'paella', dia:2, mom:'Dinar', plat:'Paella valenciana', pax:30, ing:[
+   G('Arròs bomba',100,0,SEC),
+   G('Pollastre a trossos',150,0,CARN),
+   G('Conill a trossos',110,0,CARN),
+   G('Bajoqueta',60,0,VERD),
+   G('Garrofó',40,0,VERD),
+   G('Tomaca ratllada',50,0,VERD),
+   M('Oli d’oliva',12,250,SEC),
+   G('Pebre roig',1,25,SEC),
+   G('Safrà',0,3,SEC),
+   G('Romer (branquetes)',0,10,VERD),
+   G('Sal',8,0,SEC),
+ ]},
+
+ {id:'roquefort', dia:1, mom:'Sopar', plat:'Llom al roquefort', pax:30, ing:[
+   G('Llom de porc',200,0,CARN),
+   G('Formatge roquefort',45,0,LACT),
+   M('Nata per cuinar',60,0,LACT),
+   G('Creilles',200,0,VERD),
+   G('Ceba',30,0,VERD),
+   G('Pa',60,0,PA),
+   M('Oli d’oliva',5,200,SEC),
+   G('Sal',0,40,SEC),
+   G('Pebre negre',0,15,SEC),
+ ]},
+
+ {id:'cassola', dia:3, mom:'Sopar', plat:'Cassolà', pax:30, ing:[],
+   nota:'Menú sense tancar. Quan el decidiu, s’afig ací i ja entra a la llista.'},
+
+ {id:'dinar1', dia:1, mom:'Dinar', plat:'Dinar del primer dia', pax:30, ing:[],
+   nota:'Encara sense plat. Diga-m’ho i l’afig.'},
+
+ {id:'burger', dia:6, mom:'Sopar', plat:'Burger', pax:30, ing:[
+   G('Carn d’hamburguesa',190,0,CARN),
+   U('Pa d’hamburguesa',1.3,0,PA),
+   U('Formatge en llesques',1.5,0,LACT),
+   G('Bacon',40,0,CARN),
+   G('Enciam',30,0,VERD),
+   G('Tomaca',60,0,VERD),
+   G('Ceba',40,0,VERD),
+   G('Creilles congelades',150,0,CONG),
+   M('Ketchup',20,0,SEC),
+   M('Maionesa',20,0,SEC),
+   M('Mostassa',8,0,SEC),
+   M('Oli de fregir',30,500,SEC),
+   G('Sal',0,40,SEC),
+ ]},
+
+ {id:'mexica', dia:7, mom:'Sopar', plat:'Fajites de carn picada + nachos', pax:30, ing:[
+   G('Carn picada',180,0,CARN),
+   U('Tortilles de blat',3,0,SEC),
+   G('Nachos',70,0,SEC),
+   G('Pebrera roja i verda',70,0,VERD),
+   G('Ceba',50,0,VERD),
+   G('Tomaca',60,0,VERD),
+   G('Formatge ratllat',55,0,LACT),
+   G('Guacamole',45,0,SEC),
+   G('Nata agra',30,0,LACT),
+   G('Fesols roigs',40,0,SEC),
+   G('Espècies fajita',3,30,SEC),
+   G('Jalapenys',0,300,SEC),
+   M('Oli d’oliva',5,200,SEC),
+   G('Llimes',15,0,VERD),
+ ]},
+
+ {id:'gala', dia:8, mom:'Sopar', plat:'Solomillo al Pedro Ximénez + picadeta', pax:30, ing:[
+   G('Solomillo de porc',220,0,CARN),
+   M('Pedro Ximénez',60,0,SEC),
+   M('Nata per cuinar',50,0,LACT),
+   M('Brou de carn',60,0,SEC),
+   G('Ceba',40,0,VERD),
+   G('Panses',15,0,SEC),
+   G('Creilles',150,0,VERD),
+   G('Pernil serrà',40,0,CARN),
+   G('Formatge curat',40,0,LACT),
+   G('Ensaladilla',80,0,VERD),
+   G('Llagostins',100,0,PEIX),
+   G('Olives i encurtits',40,0,SEC),
+   G('Pa',80,0,PA),
+   M('Oli d’oliva',5,250,SEC),
+   G('Sal',0,50,SEC),
+   G('Pebre negre',0,15,SEC),
+ ]},
+];
+
+const ORDRE=[CARN,PEIX,VERD,LACT,CONG,PA,SEC];
+const S=JSON.parse(localStorage.getItem('arjup')||'{}');
+const guarda=()=>localStorage.setItem('arjup',JSON.stringify(S));
+
+// Redondeo a formato de compra real: no vas al super a per 1327 g d'arros.
+function compra(q,u){
+  if(u==='uds') return Math.ceil(q)+' uds';
+  if(u==='g'){
+    if(q>=1000) return String(Math.ceil(q/500)*.5).replace('.',',')+' kg';
+    if(q>=100)  return Math.ceil(q/100)*100+' g';
+    return Math.ceil(q/10)*10+' g';          // especies: no compres 100 g de safra
+  }
+  if(u==='ml'){
+    if(q>=1000) return String(Math.ceil(q/250)*.25).replace('.',',')+' L';
+    if(q>=100)  return Math.ceil(q/50)*50+' ml';
+    return Math.ceil(q/10)*10+' ml';
+  }
+  return Math.ceil(q)+' '+u;
+}
+
+
+
+/* ---------- dates ---------- */
+const INICI_PER_DEFECTE='2026-08-21';
+const inici=()=>S.inici||INICI_PER_DEFECTE;
+function dataDe(dia){
+  const d=new Date(inici()+'T12:00:00');
+  d.setDate(d.getDate()+dia-1);
+  return d;
+}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const diaSetmana=dia=>cap(dataDe(dia).toLocaleDateString('ca-ES',{weekday:'long'}));
+const diaMes=dia=>dataDe(dia).toLocaleDateString('ca-ES',{day:'numeric',month:'long'});
+const diaCurt=dia=>cap(dataDe(dia).toLocaleDateString('ca-ES',
+                    {weekday:'long',day:'numeric',month:'long'}));
+function setInici(v){ if(v){S.inici=v;guarda();pinta()} }
+
+/* ---------- estat ---------- */
+function estat(m){ return {pax:(S[m.id]||{}).pax||m.pax} }
+const cuina = m => m.ing.length>0;
+const MOM={Esmorzar:0,Dinar:1,Sopar:2};
+const ordenats=[...MENUS].sort((a,b)=>a.dia-b.dia||MOM[a.mom]-MOM[b.mom]);
+
+function agrega(menus){
+  const acc={};
+  for(const m of menus){
+    const pax=estat(m).pax;
+    for(const i of m.ing){
+      const k=i.n+'|'+i.u;
+      acc[k]=acc[k]||{n:i.n,u:i.u,cat:i.cat,q:0};
+      acc[k].q += i.base + i.pax*pax;
+    }
+  }
+  return Object.values(acc);
+}
+
+// Cada menjar te els seus tics propis: tachar "Ceba" a l'esmorzar no la tacha al burger.
+const clau=(ns,i)=>'c:'+ns+':'+i.n;
+
+/* Afegits a ma: cada llista guarda els seus. No escalen amb comensals,
+   la quantitat es text lliure ("2 kg", "3 paquets"). */
+const extres=ns=>S['x:'+ns]||[];
+const desaExtres=(ns,a)=>{S['x:'+ns]=a;guarda();pinta()};
+function afegirDe(ev,ns){
+  ev.preventDefault();
+  const f=ev.target, n=f.nom.value.trim();
+  if(!n) return;
+  desaExtres(ns,[...extres(ns),{n,q:f.qty.value.trim(),fet:false}]);
+  document.querySelector('.add input[name=nom]')?.focus();
+}
+const marcaExtra=(ns,i,v)=>desaExtres(ns,extres(ns).map((x,j)=>j===i?{...x,fet:v}:x));
+const llevaExtra=(ns,i)=>desaExtres(ns,extres(ns).filter((_,j)=>j!==i));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const totalDe=(items,ns)=>items.length+extres(ns).length;
+const fetsDe=(items,ns)=>items.filter(i=>S[clau(ns,i)]).length
+                        + extres(ns).filter(x=>x.fet).length;
+const pct=(a,b)=>b? a/b*100 : 0;
+
+/* La llista es llig com una carta: nom a l'esquerra, quantitat a la dreta,
+   i una linia de punts que els uneix. */
+function pintaLlista(items,ns){
+  return ORDRE.filter(c=>items.some(i=>i.cat===c)).map(c=>{
+    const ll=items.filter(i=>i.cat===c).sort((a,b)=>b.q-a.q);
+    return `<div class="secline"><span class="lbl red">${c}</span></div><ul>`+ll.map(i=>{
+      const k=clau(ns,i);
+      return `<li class="${S[k]?'done':''}">
+        <input type="checkbox" ${S[k]?'checked':''} aria-label="${i.n}"
+               onchange="check('${k}',this.checked)">
+        <span class="n">${i.n}</span>
+        <i class="lead" aria-hidden="true"></i>
+        <span class="q">${compra(i.q,i.u)}</span>
+        <span class="raw">${Math.round(i.q)} ${i.u}</span>
+      </li>`;
+    }).join('')+'</ul>';
+  }).join('');
+}
+
+function seccioExtres(ns){
+  const ex=extres(ns);
+  return `<div class="secline"><span class="lbl red">Afegits a mà</span></div>`
+    + (ex.length ? '<ul>'+ex.map((x,i)=>`<li class="${x.fet?'done':''}">
+        <input type="checkbox" ${x.fet?'checked':''} aria-label="${esc(x.n)}"
+               onchange="marcaExtra('${ns}',${i},this.checked)">
+        <span class="n">${esc(x.n)}</span>
+        <i class="lead" aria-hidden="true"></i>
+        <span class="q hand">${esc(x.q)}</span>
+        <button class="del" onclick="llevaExtra('${ns}',${i})"
+                aria-label="llevar ${esc(x.n)}">&times;</button>
+      </li>`).join('')+'</ul>' : '')
+    + `<form class="add" onsubmit="afegirDe(event,'${ns}')">
+        <input name="nom" placeholder="Què falta?" autocomplete="off" aria-label="ingredient">
+        <input name="qty" class="qty" placeholder="Quant?" autocomplete="off" aria-label="quantitat">
+        <button class="act" type="submit">Afegir</button>
+      </form>`;
+}
+
+function encapcalament(fets,total){
+  return `<div class="secline"><span class="lbl">La compra</span>
+      <span class="count">${fets} de ${total}</span></div>
+    <div class="meter"><i style="transform:scaleX(${pct(fets,total)/100})"></i></div>`;
+}
+
+/* ---------- pantalla 1: la carta de la setmana ---------- */
+function vistaSetmana(){
+  const dies=[...new Set(ordenats.map(m=>m.dia))];
+  return `<p class="dateline">Les festes comencen el
+      <input type="date" value="${inici()}" aria-label="primer dia de festes"
+             onchange="setInici(this.value)"></p>` +
+    dies.map(d=>`
+      <section class="jorn">
+        <div class="jhead">
+          <span class="lbl red n">Dia ${d}</span>
+          <h2>${diaSetmana(d)}</h2>
+          <time>${diaMes(d)}</time>
+        </div>
+        ${ordenats.filter(m=>m.dia===d).map(fila).join('')}
+      </section>`).join('') +
+    `<div class="acts"><a class="act" href="#/tot">Veure-ho tot junt</a></div>`;
+}
+
+function fila(m){
+  const e=estat(m), items=agrega([m]);
+  const total=totalDe(items,m.id), fets=fetsDe(items,m.id);
+  const estatCompra = total ? `${fets} de ${total} comprat` : 'sense recepta — afig-la tu';
+  return `<a class="plat ${cuina(m)?'':'wait'}" href="#/${m.id}">
+    <div class="txt"><span class="lbl">${m.mom}</span>
+      <span class="name">${m.plat}</span>
+      <span class="meta"><b>${e.pax} comensals</b> &middot; ${estatCompra}</span></div>
+    <span class="chev" aria-hidden="true">&rsaquo;</span>
+    <i class="fill" style="transform:scaleX(${pct(fets,total)/100})"></i>
+  </a>` + (m.nota && !cuina(m) ? `<p class="aside">${m.nota}</p>` : '');
+}
+
+/* ---------- pantalla 2: un menjar ---------- */
+function vistaMenjar(m){
+  const e=estat(m), items=agrega([m]), fets=fetsDe(items,m.id);
+  return `<a class="back lbl red" href="#/">&larr; Els menjars</a>
+    <p class="stamp lbl">Dia ${m.dia} &middot; ${diaCurt(m.dia)} &middot; ${m.mom}</p>
+    <h1 class="tit">${m.plat}</h1>
+    <div class="pax">
+      <div class="head"><span class="lbl red">Comensals</span>
+        <span class="ask">quants sou?</span></div>
+      <div class="row">
+        <button onclick="pas('${m.id}',-5)" aria-label="cinc comensals menys">&minus;</button>
+        <input type="number" min="0" inputmode="numeric" value="${e.pax}"
+               aria-label="nombre de comensals" onfocus="this.select()"
+               onchange="setPax('${m.id}',this.value)">
+        <button onclick="pas('${m.id}',5)" aria-label="cinc comensals mes">+</button>
+      </div>
+      <p class="hint">toca el número per a escriure’l</p>
+    </div>
+    ${encapcalament(fets,totalDe(items,m.id))}
+    ${items.length?pintaLlista(items,m.id):`<p class="aside">${m.nota||''}</p>`}
+    ${seccioExtres(m.id)}
+    <div class="acts">
+      <button class="act solid" onclick="copiar('${m.id}')">Copiar llista</button>
+      <button class="act" onclick="netejar('${m.id}')">Desmarcar</button>
+      <button class="act" onclick="print()">Imprimir</button>
+    </div>
+    <div class="colofon">
+      <div><span>Dia</span><b>${diaCurt(m.dia)}</b></div>
+      <div><span>Línies de compra</span><b>${totalDe(items,m.id)}</b></div>
+      <div class="big"><span>Comensals</span><b>${e.pax}</b></div>
+    </div>`;
+}
+
+/* ---------- pantalla 3: tot junt ---------- */
+function vistaTot(){
+  const ms=MENUS.filter(cuina), items=agrega(ms), fets=fetsDe(items,'tot');
+  const pax=ms.reduce((s,m)=>s+estat(m).pax,0);
+  const d1=Math.min(...ms.map(m=>m.dia)), d2=Math.max(...ms.map(m=>m.dia));
+  return `<a class="back lbl red" href="#/">&larr; Els menjars</a>
+    <p class="stamp lbl">Del dia ${d1} al ${d2}</p>
+    <h1 class="tit">Una sola compra</h1>
+    <p class="aside" style="border:0;padding-top:0">Els ${ms.length} menjars sumats,
+      amb els ingredients repetits agrupats. Per a baixar al súper una volta i prou.</p>
+    ${encapcalament(fets,totalDe(items,'tot'))}
+    ${pintaLlista(items,'tot')}
+    ${seccioExtres('tot')}
+    <div class="acts">
+      <button class="act solid" onclick="copiar('tot')">Copiar llista</button>
+      <button class="act" onclick="netejar('tot')">Desmarcar</button>
+      <button class="act" onclick="print()">Imprimir</button>
+    </div>
+    <div class="colofon">
+      <div><span>Menjars que cuinem</span><b>${ms.length}</b></div>
+      <div><span>Línies de compra</span><b>${totalDe(items,'tot')}</b></div>
+      <div class="big"><span>Plats servits</span><b>${pax}</b></div>
+    </div>`;
+}
+
+/* ---------- rutes ---------- */
+function pinta(){
+  const h=location.hash.slice(2);
+  const m=MENUS.find(x=>x.id===h);
+  const app=document.getElementById('app');
+  app.innerHTML = h==='tot' ? vistaTot() : m ? vistaMenjar(m) : vistaSetmana();
+  app.style.animation='none'; void app.offsetWidth; app.style.animation='';
+}
+addEventListener('hashchange',()=>{pinta();scrollTo(0,0)});
+
+const setPax=(id,v)=>{S[id]={pax:Math.max(0,parseInt(v)||0)};guarda();pinta()};
+const pas=(id,d)=>setPax(id,estat(MENUS.find(x=>x.id===id)).pax+d);
+function check(k,v){S[k]=v;guarda();pinta()}
+function netejar(ns){
+  Object.keys(S).filter(k=>k.startsWith('c:'+ns+':')).forEach(k=>delete S[k]);
+  guarda(); pinta();
+}
+
+function copiar(ns){
+  const ms = ns==='tot' ? MENUS.filter(cuina) : [MENUS.find(x=>x.id===ns)];
+  const items=agrega(ms);
+  const titol = ns==='tot'
+    ? 'COMPRA DE TOTES LES FESTES'
+    : ms[0].plat.toUpperCase()+'\n'+ms[0].mom+' del dia '+ms[0].dia+' ('+diaCurt(ms[0].dia)+
+      ') — '+estat(ms[0]).pax+' comensals';
+  const txt = titol+'\nPenya l’Arjup\n\n'
+    + ORDRE.filter(c=>items.some(i=>i.cat===c)).map(c=>
+        c.toUpperCase()+'\n'+items.filter(i=>i.cat===c)
+          .map(i=>'- '+i.n+': '+compra(i.q,i.u)).join('\n')
+      ).join('\n\n')
+    + (extres(ns).length ? '\n\nAFEGITS A MÀ\n'
+        + extres(ns).map(x=>'- '+x.n+(x.q?': '+x.q:'')).join('\n') : '');
+  navigator.clipboard.writeText(txt)
+    .then(()=>alert('Llista copiada. Pega-la al WhatsApp.'))
+    .catch(()=>prompt('Copia això:',txt));
+}
+
+pinta();
+
+// Comprovacio minima: si algu toca compra(), agrega() o les dates, aixo peta a la consola.
+(function test(){
+  console.assert(compra(1327,'g')==='1,5 kg', 'g>=1000 arrodonit a mig quilo');
+  console.assert(compra(340,'g')==='400 g', 'g<1000 arrodonit a 100');
+  console.assert(compra(3,'g')==='10 g', 'quantitats menudes a 10 g, no a 100');
+  console.assert(compra(1100,'ml')==='1,25 L', 'ml>=1000 arrodonit a 250');
+  console.assert(compra(2.1,'uds')==='3 uds', 'uds sempre cap amunt');
+
+  const esm=MENUS.find(m=>m.id==='esmorzar'), pax=estat(esm).pax, it=agrega([esm]);
+  console.assert(it.find(i=>i.n==='Salsitxes fresques').q===180*pax, 'escalat lineal');
+  console.assert(it.find(i=>i.n.startsWith('Oli')).q===300+5*pax, 'base fixa + per cap');
+
+  const cuinats=MENUS.filter(cuina), tot=agrega(cuinats);
+  const solt=cuinats.map(m=>agrega([m])).flat();
+  const suma=n=>solt.filter(i=>i.n===n).reduce((s,i)=>s+i.q,0);
+  console.assert(tot.every(i=>Math.abs(i.q-suma(i.n))<1e-6),
+    'el tot junt ha de ser la suma exacta dels menjars');
+
+  console.assert(dataDe(1).toISOString().slice(0,10)===inici(), 'dia 1 = data d’inici');
+
+  // els afegits a ma compten al total i no es barregen entre menjars
+  const abans=totalDe(agrega([esm]),'esmorzar');
+  S['x:esmorzar']=[{n:'Gel',q:'2 bosses',fet:false}];
+  console.assert(totalDe(agrega([esm]),'esmorzar')===abans+1, 'l’afegit suma al total');
+  console.assert(extres('burger').length===0, 'els afegits no salten d’un menjar a l’altre');
+  delete S['x:esmorzar'];
+  console.assert((dataDe(8)-dataDe(1))/864e5===7, 'del dia 1 al 8 van 7 dies');
+})();
+
+</script>
+</body>
+</html>
